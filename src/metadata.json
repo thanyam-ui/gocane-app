@@ -1,0 +1,7 @@
+{
+  "name": "Gocane - Prototype",
+  "description": "An intelligent application designed to help the elderly and caregivers select the most suitable mobility aids based on health profile, physical capability, and budget using Gemini AI.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
