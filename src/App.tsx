@@ -539,23 +539,38 @@ BEHAVIOR:
 
   const handleAssessmentSubmit = async () => {
     if (!targetProfile) return;
-
+  
     setLoading(true);
-
-    // Avoid mutating state object directly: create normalized copy
-    const normalizedTarget: UserProfile = {
-      ...targetProfile,
-      conditions: targetProfile.conditions ?? [HealthCondition.NONE],
-      gender: targetProfile.gender ?? Gender.NOT_SPECIFIED,
-    };
-
-    const results = await getDeviceRecommendations(normalizedTarget, assessment, language);
-    setRecommendations(results);
-
-    await saveToGoogleSheet(normalizedTarget, assessment);
-
-    setLoading(false);
-    setState('RESULTS');
+  
+    try {
+      // normalize โดยไม่ mutate state
+      const normalizedTarget: UserProfile = {
+        ...targetProfile,
+        conditions: targetProfile.conditions ?? [HealthCondition.NONE],
+        gender: targetProfile.gender ?? Gender.NOT_SPECIFIED,
+      };
+  
+      // 1) เรียก AI แนะนำอุปกรณ์
+      const results = await getDeviceRecommendations(normalizedTarget, assessment, language);
+      setRecommendations(Array.isArray(results) ? results : []);
+  
+      // 2) บันทึกลงชีต (ถ้าพัง ให้ข้ามได้)
+      try {
+        await saveToGoogleSheet(normalizedTarget, assessment);
+      } catch (err) {
+        console.error("saveToGoogleSheet failed:", err);
+        // ไม่ต้องค้างหน้า ให้ไปต่อได้
+      }
+  
+      setState('RESULTS');
+    } catch (err) {
+      console.error("handleAssessmentSubmit failed:", err);
+      alert(language === 'th'
+        ? "ขออภัย ระบบวิเคราะห์ขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง"
+        : "Sorry, analysis failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sortedRecommendations = [...recommendations].sort((a, b) => {
