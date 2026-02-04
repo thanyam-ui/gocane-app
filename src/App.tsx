@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   GoogleGenAI,
   LiveServerMessage,
@@ -24,135 +24,147 @@ import { saveToGoogleSheet, registerUser, checkLogin } from './services/sheetSer
 import { lineService } from './services/lineService';
 import Layout from './components/Layout';
 
+/* ---------------------------------- I18N ---------------------------------- */
 const t = {
   th: {
-    welcome: "ยินดีต้อนรับสู่ GO CANE",
-    tagline: "ค้นหาอุปกรณ์ที่ใช่ ด้วยการวิเคราะห์เชิงกายภาพ",
-    loginBtn: "เข้าสู่ระบบด้วย LINE",
-    manualLoginBtn: "เข้าสู่ระบบด้วยเบอร์โทรศัพท์",
-    loggingIn: "กำลังเชื่อมต่อ LINE...",
-    manualLoginTitle: "เข้าสู่ระบบ",
-    registerTitle: "ลงทะเบียนสมาชิกใหม่",
-    registerDesc: "กรุณากรอกข้อมูลเพื่อสร้างบัญชี",
-    phoneLabel: "เบอร์โทรศัพท์",
-    passwordLabel: "รหัสผ่าน",
-    regBtn: "ลงทะเบียน",
-    loginSubmitBtn: "เข้าสู่ระบบ",
-    noAccount: "ยังไม่มีบัญชี?",
-    registerLink: "สมัครสมาชิกที่นี่",
-    haveAccount: "มีบัญชีอยู่แล้ว?",
-    loginLink: "เข้าสู่ระบบเลย",
-    infoTitle: "ข้อมูลพื้นฐาน",
-    infoDesc: "กรุณาระบุข้อมูลพื้นฐานเพื่อเริ่มต้นใช้งาน",
-    healthInfoDesc: "ข้อมูลสุขภาพเพื่อการวิเคราะห์ที่แม่นยำ (สำหรับตัวคุณเอง)",
-    createProfileDesc: "สร้างโปรไฟล์สำหรับผู้สูงอายุที่คุณต้องการดูแล",
-    nameLabel: "ชื่อ-นามสกุล",
-    ageLabel: "อายุ (ปี)",
-    weightLabel: "น้ำหนัก (กก.)",
-    heightLabel: "ส่วนสูง (ซม.)",
-    genderLabel: "เพศ",
-    diseaseLabel: "โรคประจำตัว (เลือกได้มากกว่า 1)",
-    continueBtn: "ถัดไป",
-    startAssess: "เริ่มการประเมิน",
-    selectTitle: "ต้องการเลือกอุปกรณ์ให้ใครคะ?",
-    self: "สำหรับตัวเอง",
-    others: "สำหรับผู้อื่น",
-    assess1: "ความมั่นคงในการเดิน",
-    viewResult: "วิเคราะห์ผลลัพธ์",
-    resultFor: "ผลสำหรับคุณ:",
-    sortByQ: "เน้นคุณภาพ",
-    sortByP: "ราคาประหยัด",
-    insight: "🩺 Professional Physiotherapy Insight",
-    buyBtn: "สั่งซื้อ",
-    chatInit: "สวัสดีค่ะ นักกายภาพบำบัดวิชาชีพยินดีให้คำปรึกษาค่ะ คุณมีข้อสงสัยตรงไหนไหมคะ?",
-    chatTyping: "นักกายภาพบำบัดกำลังพิมพ์...",
-    chatPlaceholder: "พิมพ์คำถามของคุณ...",
-    voiceWelcome: "สวัสดีค่ะ ยินดีต้อนรับสู่ GO CANE ต้องการให้ฉันช่วยแนะนำการใช้งานแอปไหมคะ?",
-    step2: "การประเมินความสามารถทางกายภาพ",
-    sitStandLabel: "การลุกจากนั่งเป็นยืน (จากเก้าอี้มีความสูงปกติ)",
-    strengthLabel: "ความแข็งแรงของกล้ามเนื้อแขน",
-    strengthHint: "ลองบีบมือผู้อื่นหรือกำสิ่งของแน่นๆ",
-    weightBearingLabel: "การลงน้ำหนักที่ขา",
-    budgetLabel: "งบประมาณสำหรับอุปกรณ์",
-    optSit1: "ลุกได้เอง ไม่ต้องใช้มือยัน",
-    optSit2: "ต้องใช้มือยัน 1 ข้าง",
-    optSit3: "ต้องใช้มือยัน 2 ข้าง หรือต้องมีคนพยุง",
-    optSit4: "ลุกเองไม่ได้เลย",
-    optStr1: "แข็งแรง (กำมือแน่น/ยันตัวลอยได้)",
-    optStr2: "ปานกลาง (พอยันตัวได้บ้าง)",
-    optStr3: "อ่อนแรง (กำมือไม่แน่น)",
-    optWB1: "ลงน้ำหนักได้เต็มที่ ไม่เจ็บ",
-    optWB2: "ลงได้บ้างแต่เจ็บ/เสียว",
-    optWB3: "ลงน้ำหนักไม่ได้เลย",
-    optBud1: "ประหยัด (ไม่เกิน 1,000 บาท)",
-    optBud2: "ปานกลาง (1,000 - 3,000 บาท)",
-    optBud3: "คุณภาพสูง (มากกว่า 3,000 บาท)"
+    welcome: 'ยินดีต้อนรับสู่ GO CANE',
+    tagline: 'ค้นหาอุปกรณ์ที่ใช่ ด้วยการวิเคราะห์เชิงกายภาพ',
+    loginBtn: 'เข้าสู่ระบบด้วย LINE',
+    manualLoginBtn: 'เข้าสู่ระบบด้วยเบอร์โทรศัพท์',
+    loggingIn: 'กำลังเชื่อมต่อ LINE...',
+    manualLoginTitle: 'เข้าสู่ระบบ',
+    registerTitle: 'ลงทะเบียนสมาชิกใหม่',
+    registerDesc: 'กรุณากรอกข้อมูลเพื่อสร้างบัญชี',
+    phoneLabel: 'เบอร์โทรศัพท์',
+    passwordLabel: 'รหัสผ่าน',
+    regBtn: 'ลงทะเบียน',
+    loginSubmitBtn: 'เข้าสู่ระบบ',
+    noAccount: 'ยังไม่มีบัญชี?',
+    registerLink: 'สมัครสมาชิกที่นี่',
+    haveAccount: 'มีบัญชีอยู่แล้ว?',
+    loginLink: 'เข้าสู่ระบบเลย',
+    infoTitle: 'ข้อมูลพื้นฐาน',
+    infoDesc: 'กรุณาระบุข้อมูลพื้นฐานเพื่อเริ่มต้นใช้งาน',
+    healthInfoDesc: 'ข้อมูลสุขภาพเพื่อการวิเคราะห์ที่แม่นยำ (สำหรับตัวคุณเอง)',
+    createProfileDesc: 'สร้างโปรไฟล์สำหรับผู้สูงอายุที่คุณต้องการดูแล',
+    nameLabel: 'ชื่อ-นามสกุล',
+    ageLabel: 'อายุ (ปี)',
+    weightLabel: 'น้ำหนัก (กก.)',
+    heightLabel: 'ส่วนสูง (ซม.)',
+    genderLabel: 'เพศ',
+    diseaseLabel: 'โรคประจำตัว (เลือกได้มากกว่า 1)',
+    continueBtn: 'ถัดไป',
+    startAssess: 'เริ่มการประเมิน',
+    selectTitle: 'ต้องการเลือกอุปกรณ์ให้ใครคะ?',
+    self: 'สำหรับตัวเอง',
+    others: 'สำหรับผู้อื่น',
+    assess1: 'ความมั่นคงในการเดิน',
+    viewResult: 'วิเคราะห์ผลลัพธ์',
+    resultFor: 'ผลสำหรับคุณ:',
+    sortByQ: 'เน้นคุณภาพ',
+    sortByP: 'ราคาประหยัด',
+    insight: '🩺 Professional Physiotherapy Insight',
+    buyBtn: 'สั่งซื้อ',
+    chatInit: 'สวัสดีค่ะ นักกายภาพบำบัดวิชาชีพยินดีให้คำปรึกษาค่ะ คุณมีข้อสงสัยตรงไหนไหมคะ?',
+    chatTyping: 'นักกายภาพบำบัดกำลังพิมพ์...',
+    chatPlaceholder: 'พิมพ์คำถามของคุณ...',
+    voiceWelcome: 'สวัสดีค่ะ ยินดีต้อนรับสู่ GO CANE ต้องการให้ฉันช่วยแนะนำการใช้งานแอปไหมคะ?',
+    step2: 'การประเมินความสามารถทางกายภาพ',
+    sitStandLabel: 'การลุกจากนั่งเป็นยืน (จากเก้าอี้มีความสูงปกติ)',
+    strengthLabel: 'ความแข็งแรงของกล้ามเนื้อแขน',
+    strengthHint: 'ลองบีบมือผู้อื่นหรือกำสิ่งของแน่นๆ',
+    weightBearingLabel: 'การลงน้ำหนักที่ขา',
+    budgetLabel: 'งบประมาณสำหรับอุปกรณ์',
+    optSit1: 'ลุกได้เอง ไม่ต้องใช้มือยัน',
+    optSit2: 'ต้องใช้มือยัน 1 ข้าง',
+    optSit3: 'ต้องใช้มือยัน 2 ข้าง หรือต้องมีคนพยุง',
+    optSit4: 'ลุกเองไม่ได้เลย',
+    optStr1: 'แข็งแรง (กำมือแน่น/ยันตัวลอยได้)',
+    optStr2: 'ปานกลาง (พอยันตัวได้บ้าง)',
+    optStr3: 'อ่อนแรง (กำมือไม่แน่น)',
+    optWB1: 'ลงน้ำหนักได้เต็มที่ ไม่เจ็บ',
+    optWB2: 'ลงได้บ้างแต่เจ็บ/เสียว',
+    optWB3: 'ลงน้ำหนักไม่ได้เลย',
+    optBud1: 'ประหยัด (ไม่เกิน 1,000 บาท)',
+    optBud2: 'ปานกลาง (1,000 - 3,000 บาท)',
+    optBud3: 'คุณภาพสูง (มากกว่า 3,000 บาท)',
+    signedIn: 'เข้าสู่ระบบแล้ว',
+    logout: 'ออกจากระบบ',
+    prevFound: 'พบผลประเมินก่อนหน้า',
+    viewLatest: 'ดูผลครั้งล่าสุด',
+    noResult: 'ยังไม่มีผลวิเคราะห์ (อาจเกิดจาก API Key หรือระบบวิเคราะห์ขัดข้อง) กรุณาลองใหม่',
   },
   en: {
-    welcome: "Welcome to GO CANE",
-    tagline: "Find the right tool with physical analysis.",
-    loginBtn: "Login with LINE",
-    manualLoginBtn: "Login with Phone Number",
-    loggingIn: "Connecting to LINE...",
-    manualLoginTitle: "Login",
-    registerTitle: "Register New Account",
-    registerDesc: "Please create an account.",
-    phoneLabel: "Phone Number",
-    passwordLabel: "Password",
-    regBtn: "Register",
-    loginSubmitBtn: "Login",
-    noAccount: "No account?",
-    registerLink: "Register here",
-    haveAccount: "Already have an account?",
-    loginLink: "Login here",
-    infoTitle: "Basic Information",
-    infoDesc: "Please provide basic information to start.",
-    healthInfoDesc: "Health information for accurate analysis (For Yourself).",
-    createProfileDesc: "Create a profile for the elderly person.",
-    nameLabel: "Full Name",
-    ageLabel: "Age (Years)",
-    weightLabel: "Weight (kg)",
-    heightLabel: "Height (cm)",
-    genderLabel: "Gender",
-    diseaseLabel: "Conditions (Select all that apply)",
-    continueBtn: "Next",
-    startAssess: "Start Assessment",
-    selectTitle: "Who are you searching for?",
-    self: "For Myself",
-    others: "For Someone Else",
-    assess1: "Walking Stability",
-    viewResult: "Analyze Results",
-    resultFor: "Results for:",
-    sortByQ: "Quality",
-    sortByP: "Budget",
-    insight: "🩺 Professional Physiotherapy Insight",
-    buyBtn: "Purchase",
+    welcome: 'Welcome to GO CANE',
+    tagline: 'Find the right tool with physical analysis.',
+    loginBtn: 'Login with LINE',
+    manualLoginBtn: 'Login with Phone Number',
+    loggingIn: 'Connecting to LINE...',
+    manualLoginTitle: 'Login',
+    registerTitle: 'Register New Account',
+    registerDesc: 'Please create an account.',
+    phoneLabel: 'Phone Number',
+    passwordLabel: 'Password',
+    regBtn: 'Register',
+    loginSubmitBtn: 'Login',
+    noAccount: 'No account?',
+    registerLink: 'Register here',
+    haveAccount: 'Already have an account?',
+    loginLink: 'Login here',
+    infoTitle: 'Basic Information',
+    infoDesc: 'Please provide basic information to start.',
+    healthInfoDesc: 'Health information for accurate analysis (For Yourself).',
+    createProfileDesc: 'Create a profile for the elderly person.',
+    nameLabel: 'Full Name',
+    ageLabel: 'Age (Years)',
+    weightLabel: 'Weight (kg)',
+    heightLabel: 'Height (cm)',
+    genderLabel: 'Gender',
+    diseaseLabel: 'Conditions (Select all that apply)',
+    continueBtn: 'Next',
+    startAssess: 'Start Assessment',
+    selectTitle: 'Who are you searching for?',
+    self: 'For Myself',
+    others: 'For Someone Else',
+    assess1: 'Walking Stability',
+    viewResult: 'Analyze Results',
+    resultFor: 'Results for:',
+    sortByQ: 'Quality',
+    sortByP: 'Budget',
+    insight: '🩺 Professional Physiotherapy Insight',
+    buyBtn: 'Purchase',
     chatInit: "Hello, I'm your physical therapist. How can I assist you today?",
-    chatTyping: "Therapist is typing...",
-    chatPlaceholder: "Type your question...",
-    voiceWelcome: "Hello, welcome to GO CANE. Would you like an assistant to guide you through the app?",
-    step2: "Physical Capability Assessment",
-    sitStandLabel: "Sit-to-Stand Ability",
-    strengthLabel: "Upper Body Strength",
-    strengthHint: "Try squeezing a hand or object firmly",
-    weightBearingLabel: "Weight Bearing Status",
-    budgetLabel: "Budget",
-    optSit1: "Independent (No hands needed)",
-    optSit2: "Need 1 hand support",
-    optSit3: "Need 2 hands support or assistance",
-    optSit4: "Unable to stand",
-    optStr1: "Strong",
-    optStr2: "Moderate",
-    optStr3: "Weak",
-    optWB1: "Full weight bearing",
-    optWB2: "Partial (Painful)",
-    optWB3: "Non-weight bearing",
-    optBud1: "Low (< 1,000 THB)",
-    optBud2: "Medium (1,000 - 3,000 THB)",
-    optBud3: "High (> 3,000 THB)"
-  }
+    chatTyping: 'Therapist is typing...',
+    chatPlaceholder: 'Type your question...',
+    voiceWelcome: 'Hello, welcome to GO CANE. Would you like an assistant to guide you through the app?',
+    step2: 'Physical Capability Assessment',
+    sitStandLabel: 'Sit-to-Stand Ability',
+    strengthLabel: 'Upper Body Strength',
+    strengthHint: 'Try squeezing a hand or object firmly',
+    weightBearingLabel: 'Weight Bearing Status',
+    budgetLabel: 'Budget',
+    optSit1: 'Independent (No hands needed)',
+    optSit2: 'Need 1 hand support',
+    optSit3: 'Need 2 hands support or assistance',
+    optSit4: 'Unable to stand',
+    optStr1: 'Strong',
+    optStr2: 'Moderate',
+    optStr3: 'Weak',
+    optWB1: 'Full weight bearing',
+    optWB2: 'Partial (Painful)',
+    optWB3: 'Non-weight bearing',
+    optBud1: 'Low (< 1,000 THB)',
+    optBud2: 'Medium (1,000 - 3,000 THB)',
+    optBud3: 'High (> 3,000 THB)',
+    signedIn: 'Signed in',
+    logout: 'Logout',
+    prevFound: 'Previous results found',
+    viewLatest: 'View latest result',
+    noResult: 'No results yet (API key missing or analysis failed). Please try again.',
+  },
 };
 
+/* --------------------------- Audio helpers (base64) -------------------------- */
 function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
@@ -186,28 +198,42 @@ async function decodeAudioData(
   return buffer;
 }
 
-/** ---------------------------
- *  Local cache (LINE remember)
- *  --------------------------- */
-const cacheKey = (lineId: string) => `gocane_user_${lineId}`;
+/* ---------------------------- LocalStorage history --------------------------- */
+type SavedResult = {
+  ts: number;
+  profile: UserProfile;
+  assessment: AssessmentData;
+  recommendations: DeviceRecommendation[];
+};
 
-function loadCachedUser(lineId: string): UserProfile | null {
+function getUserKey(p: UserProfile | null): string | null {
+  if (!p) return null;
+  if (p.lineId) return `line:${p.lineId}`;
+  if (p.phoneNumber) return `tel:${p.phoneNumber}`;
+  return null;
+}
+
+function storageKey(userKey: string) {
+  return `gocane_results_${userKey}`;
+}
+
+function loadSavedResults(userKey: string): SavedResult[] {
   try {
-    const raw = localStorage.getItem(cacheKey(lineId));
-    return raw ? (JSON.parse(raw) as UserProfile) : null;
+    const raw = localStorage.getItem(storageKey(userKey));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-function saveCachedUser(lineId: string, profile: UserProfile) {
-  try {
-    localStorage.setItem(cacheKey(lineId), JSON.stringify(profile));
-  } catch {
-    // ignore quota/private mode
-  }
+function saveResult(userKey: string, item: SavedResult) {
+  const list = loadSavedResults(userKey);
+  const next = [item, ...list].slice(0, 10);
+  localStorage.setItem(storageKey(userKey), JSON.stringify(next));
 }
 
+/* ----------------------------------- App ----------------------------------- */
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>('LOGIN');
   const [language, setLanguage] = useState<'th' | 'en'>('th');
@@ -233,6 +259,8 @@ const App: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<{ sender: 'user' | 'expert'; text: string }[]>([]);
   const [isExpertTyping, setIsExpertTyping] = useState(false);
 
+  const [history, setHistory] = useState<SavedResult[]>([]);
+
   const [isAssistantActive, setIsAssistantActive] = useState(false);
   const sessionRef = useRef<any>(null);
   const nextStartTimeRef = useRef(0);
@@ -240,92 +268,52 @@ const App: React.FC = () => {
 
   const curT = t[language];
 
-  /** ---------------------------
-   *  LINE Init (auto-restore)
-   *  --------------------------- */
+  /* ------------------------------- Auth + init ------------------------------- */
   useEffect(() => {
     const initLine = async () => {
-      try {
-        const isLoggedIn = await lineService.init();
-        if (!isLoggedIn) return;
+      const isLoggedIn = await lineService.init();
+      if (isLoggedIn) {
+        const profile = await lineService.getProfile();
+        if (profile) {
+          const user: UserProfile = {
+            name: profile.displayName,
+            age: 0,
+            isSelf: true,
+            lineId: profile.userId,
+          };
+          setCurrentUserProfile(user);
+          setState('COMPLETE_BASIC_INFO');
 
-        const lp = await lineService.getProfile();
-        if (!lp?.userId) return;
-
-        // ✅ if cached -> go straight to app
-        const cached = loadCachedUser(lp.userId);
-        if (cached) {
-          setCurrentUserProfile(cached);
-          setState('PROFILE_SELECTION');
-          return;
+          const ukey = getUserKey(user);
+          if (ukey) setHistory(loadSavedResults(ukey));
         }
-
-        // no cached yet -> ask for basic info
-        const base: UserProfile = {
-          name: lp.displayName,
-          age: 0,
-          isSelf: true,
-          lineId: lp.userId,
-        };
-        setCurrentUserProfile(base);
-        setState('COMPLETE_BASIC_INFO');
-      } catch {
-        // ignore init errors
       }
     };
-
     initLine();
   }, []);
 
-  /** ---------------------------
-   *  LINE Login
-   *  --------------------------- */
   const handleLineLogin = () => {
     setIsLoggingIn(true);
-
     const isRedirecting = lineService.login();
     if (isRedirecting) return;
 
-    // If cannot redirect (iframe/dev/in-app), try to init + read profile instead of forcing REGISTER.
-    setTimeout(async () => {
-      try {
-        const isLoggedIn = await lineService.init();
-        if (isLoggedIn) {
-          const lp = await lineService.getProfile();
-          if (lp?.userId) {
-            const cached = loadCachedUser(lp.userId);
-            if (cached) {
-              setCurrentUserProfile(cached);
-              setIsLoggingIn(false);
-              setState('PROFILE_SELECTION');
-              return;
-            }
-
-            const base: UserProfile = {
-              name: lp.displayName,
-              age: 0,
-              isSelf: true,
-              lineId: lp.userId,
-            };
-            setCurrentUserProfile(base);
-            setIsLoggingIn(false);
-            setState('COMPLETE_BASIC_INFO');
-            return;
-          }
-        }
-
-        setIsLoggingIn(false);
-        setState('REGISTER');
-      } catch {
-        setIsLoggingIn(false);
-        setState('REGISTER');
-      }
-    }, 600);
+    // if cannot redirect (iframe/mock), go register
+    setTimeout(() => {
+      setIsLoggingIn(false);
+      setState('REGISTER');
+    }, 1200);
   };
 
-  /** ---------------------------
-   *  Manual Register
-   *  --------------------------- */
+  const logoutLocal = () => {
+    setCurrentUserProfile(null);
+    setTargetProfile(null);
+    setRecommendations([]);
+    setChatMessages([]);
+    setHistory([]);
+    setState('LOGIN');
+  };
+
+  /* ------------------------------- Manual auth ------------------------------- */
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -339,43 +327,25 @@ const App: React.FC = () => {
       return;
     }
 
-    // IMPORTANT:
-    // - If user came from LINE flow, currentUserProfile.lineId should exist.
-    // - Otherwise use manual_...
-    const lineIdFromLine = currentUserProfile?.lineId;
     const profile: UserProfile = {
       name: (fd.get('name') as string) || '',
       age: parseInt((fd.get('age') as string) || '0', 10),
       phoneNumber: (fd.get('phone') as string) || '',
-      lineId: lineIdFromLine || `manual_${Date.now()}`,
+      lineId: `manual_${Date.now()}`,
       isSelf: true,
     };
 
-    try {
-      await registerUser(profile, password);
-    } catch (err) {
-      console.error('registerUser failed:', err);
-      alert(language === 'th'
-        ? 'ลงทะเบียนไม่สำเร็จ กรุณาลองใหม่'
-        : 'Registration failed. Please try again.');
-      setLoading(false);
-      return;
-    }
+    await registerUser(profile, password);
 
     setCurrentUserProfile(profile);
 
-    // ✅ cache if it's a LINE user
-    if (profile.lineId && !profile.lineId.startsWith('manual_')) {
-      saveCachedUser(profile.lineId, profile);
-    }
+    const ukey = getUserKey(profile);
+    if (ukey) setHistory(loadSavedResults(ukey));
 
     setLoading(false);
     setState('PROFILE_SELECTION');
   };
 
-  /** ---------------------------
-   *  Manual Login
-   *  --------------------------- */
   const handleManualLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -388,34 +358,40 @@ const App: React.FC = () => {
     setLoading(false);
 
     if (result && result.success) {
-      setCurrentUserProfile({
-        name: result.name || "User",
+      const user: UserProfile = {
+        name: result.name || 'User',
         age: result.age || 60,
         phoneNumber: phone,
         isSelf: true,
-        lineId: `manual_${phone}`,
-      });
+      };
+      setCurrentUserProfile(user);
+
+      const ukey = getUserKey(user);
+      if (ukey) setHistory(loadSavedResults(ukey));
+
       setState('PROFILE_SELECTION');
     } else {
-      alert(language === 'th' ? "เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง" : "Invalid phone or password");
+      alert(language === 'th' ? 'เบอร์โทรศัพท์หรือรหัสผ่านไม่ถูกต้อง' : 'Invalid phone or password');
     }
   };
 
-  /** ---------------------------
-   *  Voice assistant tools
-   *  --------------------------- */
+  /* ------------------------------ Voice assistant ----------------------------- */
   const performVoiceLogin = () => {
     if (state === 'LOGIN') {
       handleLineLogin();
-      return { success: true, message: language === 'th' ? "กำลังเข้าสู่ระบบผ่าน LINE ให้ค่ะ" : "Logging you in via LINE." };
+      return { success: true, message: language === 'th' ? 'กำลังเข้าสู่ระบบผ่าน LINE ให้ค่ะ' : 'Logging you in via LINE.' };
     }
-    return { success: false, message: "Already in." };
+    return { success: false, message: 'Already in.' };
   };
 
   const closeAssistant = () => {
     try {
-      sourcesRef.current.forEach(s => {
-        try { s.stop(); } catch { /* ignore */ }
+      sourcesRef.current.forEach((s) => {
+        try {
+          s.stop();
+        } catch {
+          /* ignore */
+        }
       });
       sourcesRef.current.clear();
       nextStartTimeRef.current = 0;
@@ -441,9 +417,7 @@ const App: React.FC = () => {
 
       const apiKey = import.meta.env.VITE_API_KEY as string | undefined;
       if (!apiKey) {
-        alert(language === 'th'
-          ? 'ยังไม่ได้ตั้งค่า VITE_API_KEY ใน Environment Variables'
-          : 'Missing VITE_API_KEY in environment variables');
+        alert(language === 'th' ? 'ยังไม่ได้ตั้งค่า VITE_API_KEY ใน Environment Variables' : 'Missing VITE_API_KEY in environment variables');
         setIsAssistantActive(false);
         return;
       }
@@ -456,26 +430,26 @@ const App: React.FC = () => {
 
       if (outputAudioCtx.state === 'suspended') await outputAudioCtx.resume();
 
-      let pageContext = "";
+      let pageContext = '';
       switch (state) {
-        case 'LOGIN': pageContext = language === 'th' ? "หน้าแรก" : "Home"; break;
-        case 'REGISTER': pageContext = language === 'th' ? "ลงทะเบียนสมาชิก" : "Register"; break;
-        case 'COMPLETE_BASIC_INFO': pageContext = language === 'th' ? "กรอกข้อมูลพื้นฐาน" : "Basic Information"; break;
-        case 'COMPLETE_HEALTH_INFO': pageContext = language === 'th' ? "กรอกข้อมูลสุขภาพ" : "Health Information"; break;
-        case 'RESULTS': pageContext = language === 'th' ? "ผลลัพธ์การประเมิน" : "Assessment Results"; break;
-        default: pageContext = language === 'th' ? "ใช้งานทั่วไป" : "General";
+        case 'LOGIN': pageContext = language === 'th' ? 'หน้าแรก' : 'Home'; break;
+        case 'REGISTER': pageContext = language === 'th' ? 'ลงทะเบียนสมาชิก' : 'Register'; break;
+        case 'COMPLETE_BASIC_INFO': pageContext = language === 'th' ? 'กรอกข้อมูลพื้นฐาน' : 'Basic Information'; break;
+        case 'COMPLETE_HEALTH_INFO': pageContext = language === 'th' ? 'กรอกข้อมูลสุขภาพ' : 'Health Information'; break;
+        case 'RESULTS': pageContext = language === 'th' ? 'ผลลัพธ์การประเมิน' : 'Assessment Results'; break;
+        default: pageContext = language === 'th' ? 'ใช้งานทั่วไป' : 'General';
       }
 
       const loginTool: FunctionDeclaration = {
         name: 'performLogin',
         description: 'Login via LINE when user says start or login.',
-        parameters: { type: Type.OBJECT, properties: {} }
+        parameters: { type: Type.OBJECT, properties: {} },
       };
 
       const closeTool: FunctionDeclaration = {
         name: 'closeAssistant',
         description: 'Close the assistant if user says no or close.',
-        parameters: { type: Type.OBJECT, properties: {} }
+        parameters: { type: Type.OBJECT, properties: {} },
       };
 
       const sessionPromise = ai.live.connect({
@@ -483,11 +457,11 @@ const App: React.FC = () => {
         callbacks: {
           onopen: () => {
             const silence = new Uint8Array(1024);
-            sessionPromise.then(s => {
+            sessionPromise.then((s) =>
               s.sendRealtimeInput({
-                media: { data: encode(silence), mimeType: 'audio/pcm;rate=16000' }
-              });
-            });
+                media: { data: encode(silence), mimeType: 'audio/pcm;rate=16000' },
+              })
+            );
 
             const source = inputAudioCtx.createMediaStreamSource(stream);
             const scriptProcessor = inputAudioCtx.createScriptProcessor(4096, 1, 1);
@@ -497,9 +471,9 @@ const App: React.FC = () => {
               const int16 = new Int16Array(inputData.length);
               for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
 
-              sessionPromise.then(s =>
+              sessionPromise.then((s) =>
                 s.sendRealtimeInput({
-                  media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' }
+                  media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' },
                 })
               );
             };
@@ -513,9 +487,9 @@ const App: React.FC = () => {
             for (const fc of functionCalls) {
               if (fc.name === 'performLogin') {
                 const res = performVoiceLogin();
-                sessionPromise.then(s =>
+                sessionPromise.then((s) =>
                   s.sendToolResponse({
-                    functionResponses: { id: fc.id, name: fc.name, response: res }
+                    functionResponses: { id: fc.id, name: fc.name, response: res },
                   })
                 );
               } else if (fc.name === 'closeAssistant') {
@@ -543,12 +517,12 @@ const App: React.FC = () => {
 
           onclose: () => {
             setIsAssistantActive(false);
-            stream.getTracks().forEach(t => t.stop());
+            stream.getTracks().forEach((t) => t.stop());
           },
 
           onerror: () => {
             setIsAssistantActive(false);
-            stream.getTracks().forEach(t => t.stop());
+            stream.getTracks().forEach((t) => t.stop());
           },
         },
 
@@ -570,14 +544,11 @@ BEHAVIOR:
 
       sessionRef.current = await sessionPromise;
     } catch (err) {
-      console.error('Assistant error:', err);
       setIsAssistantActive(false);
     }
   };
 
-  /** ---------------------------
-   *  Basic Info
-   *  --------------------------- */
+  /* ------------------------------- Profile forms ------------------------------ */
   const handleBasicInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentUserProfile) return;
@@ -591,63 +562,44 @@ BEHAVIOR:
     };
 
     setCurrentUserProfile(profile);
-
-    // ✅ cache if it's a LINE user
-    if (profile.lineId && !profile.lineId.startsWith('manual_')) {
-      saveCachedUser(profile.lineId, profile);
-    }
-
     setState('PROFILE_SELECTION');
   };
 
-  /** ---------------------------
-   *  Health Info (self)
-   *  --------------------------- */
   const handleHealthInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
     const conditions: HealthCondition[] = [];
-    HEALTH_CONDITIONS_LIST.forEach(c => { if (fd.get(c)) conditions.push(c); });
+    HEALTH_CONDITIONS_LIST.forEach((c) => { if (fd.get(c)) conditions.push(c); });
 
     if (currentUserProfile) {
       const updatedProfile: UserProfile = {
         ...currentUserProfile,
         weight: parseFloat((fd.get('weight') as string) || '0'),
         height: parseFloat((fd.get('height') as string) || '0'),
-        gender: ((fd.get('gender') as Gender) || Gender.NOT_SPECIFIED),
+        gender: (fd.get('gender') as Gender) || Gender.NOT_SPECIFIED,
         conditions: conditions.length > 0 ? conditions : [HealthCondition.NONE],
         isSelf: true,
       };
-
       setCurrentUserProfile(updatedProfile);
       setTargetProfile(updatedProfile);
-
-      // ✅ cache if it's a LINE user
-      if (updatedProfile.lineId && !updatedProfile.lineId.startsWith('manual_')) {
-        saveCachedUser(updatedProfile.lineId, updatedProfile);
-      }
-
       setState('ASSESSMENT');
     }
   };
 
-  /** ---------------------------
-   *  Create profile (others)
-   *  --------------------------- */
   const handleCreateProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
 
     const conditions: HealthCondition[] = [];
-    HEALTH_CONDITIONS_LIST.forEach(c => { if (fd.get(c)) conditions.push(c); });
+    HEALTH_CONDITIONS_LIST.forEach((c) => { if (fd.get(c)) conditions.push(c); });
 
     const profile: UserProfile = {
       name: (fd.get('name') as string) || '',
       age: parseInt((fd.get('age') as string) || '0', 10),
       weight: parseFloat((fd.get('weight') as string) || '0'),
       height: parseFloat((fd.get('height') as string) || '0'),
-      gender: ((fd.get('gender') as Gender) || Gender.NOT_SPECIFIED),
+      gender: (fd.get('gender') as Gender) || Gender.NOT_SPECIFIED,
       conditions: conditions.length > 0 ? conditions : [HealthCondition.NONE],
       isSelf: false,
     };
@@ -656,9 +608,7 @@ BEHAVIOR:
     setState('ASSESSMENT');
   };
 
-  /** ---------------------------
-   *  Assessment Submit
-   *  --------------------------- */
+  /* ------------------------------- Assessment flow ---------------------------- */
   const handleAssessmentSubmit = async () => {
     if (!targetProfile) return;
 
@@ -672,20 +622,34 @@ BEHAVIOR:
       };
 
       const results = await getDeviceRecommendations(normalizedTarget, assessment, language);
-      setRecommendations(Array.isArray(results) ? results : []);
+      const safeResults = Array.isArray(results) ? results : [];
+      setRecommendations(safeResults);
 
+      // Save to sheet (non-blocking)
       try {
         await saveToGoogleSheet(normalizedTarget, assessment);
       } catch (err) {
-        console.error("saveToGoogleSheet failed:", err);
+        console.error('saveToGoogleSheet failed:', err);
+      }
+
+      // Save to local history (per logged-in user)
+      const ukey = getUserKey(currentUserProfile);
+      if (ukey) {
+        saveResult(ukey, {
+          ts: Date.now(),
+          profile: normalizedTarget,
+          assessment,
+          recommendations: safeResults,
+        });
+        setHistory(loadSavedResults(ukey));
       }
 
       setState('RESULTS');
     } catch (err) {
-      console.error("handleAssessmentSubmit failed:", err);
+      console.error('handleAssessmentSubmit failed:', err);
       alert(language === 'th'
-        ? "ขออภัย ระบบวิเคราะห์ขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง"
-        : "Sorry, analysis failed. Please try again.");
+        ? 'ขออภัย ระบบวิเคราะห์ขัดข้องชั่วคราว กรุณาลองใหม่อีกครั้ง'
+        : 'Sorry, analysis failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -697,8 +661,15 @@ BEHAVIOR:
     return 0;
   });
 
+  /* ---------------------------------- UI bits -------------------------------- */
   const headingClass = 'text-xl font-bold';
   const labelClass = 'text-sm font-bold text-gray-600';
+
+  const loginBadge = currentUserProfile?.lineId
+    ? `LINE: ${currentUserProfile.lineId.slice(0, 6)}…`
+    : currentUserProfile?.phoneNumber
+    ? `TEL: ${currentUserProfile.phoneNumber}`
+    : '';
 
   const renderBasicFields = () => (
     <div className="md:grid md:grid-cols-2 md:gap-6 space-y-4 md:space-y-0">
@@ -733,8 +704,10 @@ BEHAVIOR:
           className="w-full p-4 bg-gray-50 border border-pink-100 rounded-2xl outline-none"
           defaultValue={Gender.NOT_SPECIFIED}
         >
-          {Object.values(Gender).map(g => (
-            <option key={g} value={g}>{g}</option>
+          {Object.values(Gender).map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
           ))}
         </select>
       </div>
@@ -753,7 +726,7 @@ BEHAVIOR:
       <div>
         <label className={labelClass}>{curT.diseaseLabel}</label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-          {HEALTH_CONDITIONS_LIST.map(c => (
+          {HEALTH_CONDITIONS_LIST.map((c) => (
             <label
               key={c}
               className="flex items-center gap-3 p-4 bg-white border-2 border-pink-50 rounded-2xl text-sm font-bold cursor-pointer hover:border-pink-300 transition-all shadow-sm has-[:checked]:bg-pink-50 has-[:checked]:border-pink-400 has-[:checked]:text-pink-700"
@@ -765,30 +738,24 @@ BEHAVIOR:
       </div>
     </>
   );
-  
-const displayName =
-  targetProfile?.name ||
-  currentUserProfile?.name ||
-  (language === 'th' ? 'ผู้ใช้' : 'User');
 
-const loginBadge = currentUserProfile?.lineId
-  ? `LINE: ${currentUserProfile.lineId.slice(0, 6)}…`
-  : currentUserProfile?.phoneNumber
-  ? `TEL: ${currentUserProfile.phoneNumber}`
-  : '';
-
+  /* ---------------------------------- Render --------------------------------- */
   return (
     <Layout
       title={state === 'RESULTS' ? (language === 'th' ? 'ผลวิเคราะห์' : 'Results') : 'GO CANE'}
-      onBack={state !== 'LOGIN' ? () => {
-        if (state === 'RESULTS') setState('ASSESSMENT');
-        else if (state === 'ASSESSMENT') setState(targetProfile?.isSelf ? 'COMPLETE_HEALTH_INFO' : 'CREATE_PROFILE');
-        else if (state === 'COMPLETE_HEALTH_INFO' || state === 'CREATE_PROFILE') setState('PROFILE_SELECTION');
-        else if (state === 'PROFILE_SELECTION') setState('LOGIN');
-        else if (state === 'REGISTER' || state === 'LOGIN_MANUAL') setState('LOGIN');
-        else if (state === 'COMPLETE_BASIC_INFO') setState('PROFILE_SELECTION');
-        else setState('LOGIN');
-      } : undefined}
+      onBack={
+        state !== 'LOGIN'
+          ? () => {
+              if (state === 'RESULTS') setState('ASSESSMENT');
+              else if (state === 'ASSESSMENT') setState(targetProfile?.isSelf ? 'COMPLETE_HEALTH_INFO' : 'CREATE_PROFILE');
+              else if (state === 'COMPLETE_HEALTH_INFO' || state === 'CREATE_PROFILE') setState('PROFILE_SELECTION');
+              else if (state === 'PROFILE_SELECTION') setState('LOGIN');
+              else if (state === 'REGISTER' || state === 'LOGIN_MANUAL') setState('LOGIN');
+              else if (state === 'COMPLETE_BASIC_INFO') setState('PROFILE_SELECTION');
+              else setState('LOGIN');
+            }
+          : undefined
+      }
       onChat={state === 'RESULTS' ? () => setState('CHAT') : undefined}
       fontSize={globalScale}
       onFontSizeChange={setGlobalScale}
@@ -797,46 +764,34 @@ const loginBadge = currentUserProfile?.lineId
       language={language}
       onLanguageChange={setLanguage}
     >
-      
+      {/* Signed-in banner (shows on every page except LOGIN) */}
       {state !== 'LOGIN' && currentUserProfile && (
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-pink-100 shadow-sm">
             <div className="min-w-0">
-              <div className="text-[11px] font-black text-pink-500 tracking-wide uppercase">
-                {language === 'th' ? 'เข้าสู่ระบบแล้ว' : 'Signed in'}
-              </div>
-              <div className="text-sm font-black text-gray-800 truncate">
-                {currentUserProfile.name || (language === 'th' ? 'ไม่ทราบชื่อ' : 'Unknown')}
-              </div>
-              {loginBadge && (
-                <div className="text-[10px] text-gray-400 font-semibold mt-1">{loginBadge}</div>
-              )}
+              <div className="text-[11px] font-black text-pink-500 tracking-wide uppercase">{curT.signedIn}</div>
+              <div className="text-sm font-black text-gray-800 truncate">{currentUserProfile.name || (language === 'th' ? 'ไม่ทราบชื่อ' : 'Unknown')}</div>
+              {loginBadge && <div className="text-[10px] text-gray-400 font-semibold mt-1">{loginBadge}</div>}
             </div>
-      
+
             <button
-              onClick={() => {
-                // Logout แบบง่าย: เคลียร์สถานะในแอป (ถ้ามี lineService.logout ค่อยเรียกเพิ่ม)
-                setCurrentUserProfile(null);
-                setTargetProfile(null);
-                setRecommendations([]);
-                setChatMessages([]);
-                setState('LOGIN');
-              }}
+              onClick={logoutLocal}
               className="shrink-0 bg-pink-50 text-pink-600 border border-pink-100 font-black text-[11px] px-4 py-3 rounded-2xl active:scale-95 transition-all"
             >
-              {language === 'th' ? 'ออกจากระบบ' : 'Logout'}
+              {curT.logout}
             </button>
           </div>
         </div>
       )}
-  
+
+      {/* LOGIN */}
       {state === 'LOGIN' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-          <div className="w-28 h-28 bg-pink-400 rounded-[2.5rem] mb-8 flex items-center justify-center text-white text-5xl font-black shadow-lg ring-8 ring-pink-50">GO</div>
+          <div className="w-28 h-28 bg-pink-400 rounded-[2.5rem] mb-8 flex items-center justify-center text-white text-5xl font-black shadow-lg ring-8 ring-pink-50">
+            GO
+          </div>
           <h1 className={`${headingClass} text-pink-700 mb-2 tracking-tight`}>{curT.welcome}</h1>
-          <p className={`text-sm text-gray-400 mb-12 max-w-[220px] leading-relaxed mx-auto`}>
-            {curT.tagline}
-          </p>
+          <p className={`text-sm text-gray-400 mb-12 max-w-[220px] leading-relaxed mx-auto`}>{curT.tagline}</p>
 
           <div className="space-y-4 w-full max-w-xs mx-auto">
             <button
@@ -940,6 +895,7 @@ const loginBadge = currentUserProfile?.lineId
         </form>
       )}
 
+      {/* COMPLETE_BASIC_INFO */}
       {state === 'COMPLETE_BASIC_INFO' && (
         <form onSubmit={handleBasicInfoSubmit} className="space-y-6 max-w-2xl mx-auto">
           <div className="bg-pink-50 p-4 rounded-3xl text-pink-700 border border-pink-100 text-xs">{curT.infoDesc}</div>
@@ -950,16 +906,29 @@ const loginBadge = currentUserProfile?.lineId
         </form>
       )}
 
-      {currentUserProfile && (
-        <div className="bg-pink-50 border border-pink-100 rounded-3xl p-4 text-pink-700 text-xs font-bold">
-          {language === 'th'
-            ? <>คุณเข้าสู่ระบบเป็น: <span className="font-black">{currentUserProfile.name}</span></>
-            : <>Signed in as: <span className="font-black">{currentUserProfile.name}</span></>}
-        </div>
-      )}
-
+      {/* PROFILE_SELECTION */}
       {state === 'PROFILE_SELECTION' && (
         <div className="space-y-6 mt-4 max-w-xl mx-auto">
+          {/* Previous result card */}
+          {history.length > 0 && (
+            <div className="bg-white border border-pink-100 rounded-3xl p-4 shadow-sm">
+              <div className="text-xs font-black text-pink-600">{curT.prevFound}</div>
+              <div className="text-[11px] text-gray-500 mt-1">{new Date(history[0].ts).toLocaleString()}</div>
+              <button
+                onClick={() => {
+                  const last = history[0];
+                  setTargetProfile(last.profile);
+                  setAssessment(last.assessment);
+                  setRecommendations(last.recommendations);
+                  setState('RESULTS');
+                }}
+                className="mt-3 w-full bg-pink-50 text-pink-700 border border-pink-100 font-black text-xs p-4 rounded-2xl active:scale-95 transition-all"
+              >
+                {curT.viewLatest}
+              </button>
+            </div>
+          )}
+
           <p className="text-center text-gray-400">{curT.selectTitle}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button
@@ -989,6 +958,7 @@ const loginBadge = currentUserProfile?.lineId
         </div>
       )}
 
+      {/* COMPLETE_HEALTH_INFO */}
       {state === 'COMPLETE_HEALTH_INFO' && (
         <form onSubmit={handleHealthInfoSubmit} className="space-y-6 max-w-2xl mx-auto">
           <div className="bg-pink-50 p-4 rounded-3xl text-pink-700 border border-pink-100 text-xs">{curT.healthInfoDesc}</div>
@@ -999,6 +969,7 @@ const loginBadge = currentUserProfile?.lineId
         </form>
       )}
 
+      {/* CREATE_PROFILE */}
       {state === 'CREATE_PROFILE' && (
         <form onSubmit={handleCreateProfileSubmit} className="space-y-6 max-w-2xl mx-auto">
           <div className="bg-orange-50 p-4 rounded-3xl text-orange-700 border border-orange-100 text-xs">{curT.createProfileDesc}</div>
@@ -1012,21 +983,25 @@ const loginBadge = currentUserProfile?.lineId
         </form>
       )}
 
+      {/* ASSESSMENT */}
       {state === 'ASSESSMENT' && (
         <div className="space-y-8 max-w-3xl mx-auto">
           <h2 className={`${headingClass} text-pink-700`}>{curT.step2}</h2>
 
+          {/* Mobility */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">1</span>
               {curT.assess1}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {Object.values(MobilityLevel).map(level => (
+              {Object.values(MobilityLevel).map((level) => (
                 <button
                   key={level}
                   onClick={() => setAssessment({ ...assessment, mobilityLevel: level })}
-                  className={`w-full p-3 text-left rounded-2xl border-2 text-sm transition-all ${assessment.mobilityLevel === level ? 'border-pink-400 bg-pink-50 text-pink-700 font-bold' : 'border-gray-50 bg-white text-gray-500'}`}
+                  className={`w-full p-3 text-left rounded-2xl border-2 text-sm transition-all ${
+                    assessment.mobilityLevel === level ? 'border-pink-400 bg-pink-50 text-pink-700 font-bold' : 'border-gray-50 bg-white text-gray-500'
+                  }`}
                 >
                   {level}
                 </button>
@@ -1034,6 +1009,7 @@ const loginBadge = currentUserProfile?.lineId
             </div>
           </section>
 
+          {/* Sit-to-stand */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">2</span>
@@ -1047,6 +1023,7 @@ const loginBadge = currentUserProfile?.lineId
             </div>
           </section>
 
+          {/* Strength */}
           <section>
             <h3 className="text-gray-700 mb-1 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">3</span>
@@ -1060,6 +1037,7 @@ const loginBadge = currentUserProfile?.lineId
             </div>
           </section>
 
+          {/* Weight bearing */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">4</span>
@@ -1072,6 +1050,7 @@ const loginBadge = currentUserProfile?.lineId
             </div>
           </section>
 
+          {/* Budget */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">5</span>
@@ -1090,60 +1069,71 @@ const loginBadge = currentUserProfile?.lineId
         </div>
       )}
 
+      {/* RESULTS */}
       {state === 'RESULTS' && (
         <div className="space-y-8">
           <div className="flex justify-between items-center">
             <h4 className="text-xs font-bold text-pink-400">{curT.resultFor} {targetProfile?.name}</h4>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} className="text-[10px] bg-pink-50 p-2 rounded-xl font-bold text-pink-600 outline-none">
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="text-[10px] bg-pink-50 p-2 rounded-xl font-bold text-pink-600 outline-none">
               <option value="quality">{curT.sortByQ}</option>
               <option value="price">{curT.sortByP}</option>
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedRecommendations.map(device => (
-              <div key={device.id} className="bg-white rounded-[2.5rem] border border-pink-50 shadow-xl p-6 flex flex-col">
-                <h3 className="text-lg font-black text-pink-600 mb-4">{device.name}</h3>
-
-                <div className="bg-pink-50/50 p-5 rounded-3xl mb-5 border border-pink-100/50 flex-1">
-                  <p className="text-[10px] font-black text-pink-400 mb-2 uppercase tracking-widest">{curT.insight}</p>
-                  <p className="text-xs text-gray-600 italic leading-relaxed">"{device.reason}"</p>
-                </div>
-
-                <iframe
-                  className="w-full aspect-video rounded-3xl mb-5 shadow-inner"
-                  src={(MOCK_VIDEOS as any)[device.tutorialVideoId] || MOCK_VIDEOS.CANE}
-                  frameBorder={0}
-                  allowFullScreen
-                />
-
-                <div className="space-y-3 mt-auto">
-                  {device.purchaseLinks.map((link, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 border border-gray-50 rounded-2xl bg-gray-50/30">
-                      <span className="text-[10px] font-bold text-gray-400">{link.vendor}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="font-black text-pink-600">฿{link.price.toLocaleString()}</span>
-                        <a href={link.url} target="_blank" rel="noreferrer" className="bg-pink-400 text-white text-[10px] font-black px-4 py-2 rounded-xl">
-                          {curT.buyBtn}
-                        </a>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
+          {sortedRecommendations.length === 0 ? (
+            <div className="bg-white border border-pink-100 rounded-3xl p-6 text-sm text-pink-700">
+              {curT.noResult}
+              <div className="text-[11px] text-gray-400 mt-2">
+                {language === 'th'
+                  ? 'ตรวจสอบว่า VITE_API_KEY ตั้งไว้ทั้งใน .env.local และ Vercel Environment Variables แล้ว'
+                  : 'Check that VITE_API_KEY is set in .env.local and Vercel Environment Variables.'}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedRecommendations.map((device) => (
+                <div key={device.id} className="bg-white rounded-[2.5rem] border border-pink-50 shadow-xl p-6 flex flex-col">
+                  <h3 className="text-lg font-black text-pink-600 mb-4">{device.name}</h3>
+
+                  <div className="bg-pink-50/50 p-5 rounded-3xl mb-5 border border-pink-100/50 flex-1">
+                    <p className="text-[10px] font-black text-pink-400 mb-2 uppercase tracking-widest">{curT.insight}</p>
+                    <p className="text-xs text-gray-600 italic leading-relaxed">"{device.reason}"</p>
+                  </div>
+
+                  <iframe
+                    className="w-full aspect-video rounded-3xl mb-5 shadow-inner"
+                    src={(MOCK_VIDEOS as any)[device.tutorialVideoId] || MOCK_VIDEOS.CANE}
+                    frameBorder="0"
+                    allowFullScreen
+                  />
+
+                  <div className="space-y-3 mt-auto">
+                    {device.purchaseLinks.map((link, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 border border-gray-50 rounded-2xl bg-gray-50/30">
+                        <span className="text-[10px] font-bold text-gray-400">{link.vendor}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="font-black text-pink-600">฿{link.price.toLocaleString()}</span>
+                          <a href={link.url} target="_blank" rel="noreferrer" className="bg-pink-400 text-white text-[10px] font-black px-4 py-2 rounded-xl">
+                            {curT.buyBtn}
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
+      {/* CHAT */}
       {state === 'CHAT' && (
         <div className="flex flex-col h-[calc(100vh-220px)]">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-1 scrollbar-hide">
             <div className="flex justify-start">
-              <div className="bg-pink-50 p-5 rounded-3xl rounded-tl-none text-sm text-pink-700 max-w-[85%]">
-                {curT.chatInit}
-              </div>
+              <div className="bg-pink-50 p-5 rounded-3xl rounded-tl-none text-sm text-pink-700 max-w-[85%]">{curT.chatInit}</div>
             </div>
 
             {chatMessages.map((m, i) => (
@@ -1154,9 +1144,7 @@ const loginBadge = currentUserProfile?.lineId
               </div>
             ))}
 
-            {isExpertTyping && (
-              <div className="text-[10px] text-pink-300 animate-pulse font-bold px-4 italic">{curT.chatTyping}</div>
-            )}
+            {isExpertTyping && <div className="text-[10px] text-pink-300 animate-pulse font-bold px-4 italic">{curT.chatTyping}</div>}
           </div>
 
           <form
@@ -1165,19 +1153,20 @@ const loginBadge = currentUserProfile?.lineId
               const i = e.currentTarget.elements.namedItem('msg') as HTMLInputElement | null;
               if (!i?.value) return;
 
-              setChatMessages(p => [...p, { sender: 'user', text: i.value }]);
+              setChatMessages((p) => [...p, { sender: 'user', text: i.value }]);
               i.value = '';
               setIsExpertTyping(true);
 
               setTimeout(() => {
-                setChatMessages(p => [
+                setChatMessages((p) => [
                   ...p,
                   {
                     sender: 'expert',
-                    text: language === 'th'
-                      ? "ได้รับคำถามแล้วค่ะ นักกายภาพจะตอบกลับผ่าน LINEOA เร็วๆ นี้"
-                      : "Question received. A therapist will reply via LINEOA soon."
-                  }
+                    text:
+                      language === 'th'
+                        ? 'ได้รับคำถามแล้วค่ะ นักกายภาพจะตอบกลับผ่าน LINEOA เร็วๆ นี้'
+                        : 'Question received. A therapist will reply via LINEOA soon.',
+                  },
                 ]);
                 setIsExpertTyping(false);
               }, 2000);
