@@ -186,6 +186,28 @@ async function decodeAudioData(
   return buffer;
 }
 
+/** ---------------------------
+ *  Local cache (LINE remember)
+ *  --------------------------- */
+const cacheKey = (lineId: string) => `gocane_user_${lineId}`;
+
+function loadCachedUser(lineId: string): UserProfile | null {
+  try {
+    const raw = localStorage.getItem(cacheKey(lineId));
+    return raw ? (JSON.parse(raw) as UserProfile) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedUser(lineId: string, profile: UserProfile) {
+  try {
+    localStorage.setItem(cacheKey(lineId), JSON.stringify(profile));
+  } catch {
+    // ignore quota/private mode
+  }
+}
+
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>('LOGIN');
   const [language, setLanguage] = useState<'th' | 'en'>('th');
@@ -218,44 +240,98 @@ const App: React.FC = () => {
 
   const curT = t[language];
 
-  // LINE Init
+  /** ---------------------------
+   *  LINE Init (auto-restore)
+   *  --------------------------- */
   useEffect(() => {
     const initLine = async () => {
-      const isLoggedIn = await lineService.init();
-      if (isLoggedIn) {
-        const profile = await lineService.getProfile();
-        if (profile) {
-          setCurrentUserProfile({
-            name: profile.displayName,
-            age: 0,
-            isSelf: true,
-            lineId: profile.userId,
-          });
-          setState('COMPLETE_BASIC_INFO');
+      try {
+        const isLoggedIn = await lineService.init();
+        if (!isLoggedIn) return;
+
+        const lp = await lineService.getProfile();
+        if (!lp?.userId) return;
+
+        // ✅ if cached -> go straight to app
+        const cached = loadCachedUser(lp.userId);
+        if (cached) {
+          setCurrentUserProfile(cached);
+          setState('PROFILE_SELECTION');
+          return;
         }
+
+        // no cached yet -> ask for basic info
+        const base: UserProfile = {
+          name: lp.displayName,
+          age: 0,
+          isSelf: true,
+          lineId: lp.userId,
+        };
+        setCurrentUserProfile(base);
+        setState('COMPLETE_BASIC_INFO');
+      } catch {
+        // ignore init errors
       }
     };
+
     initLine();
   }, []);
 
+  /** ---------------------------
+   *  LINE Login
+   *  --------------------------- */
   const handleLineLogin = () => {
     setIsLoggingIn(true);
-    const isRedirecting = lineService.login();
 
+    const isRedirecting = lineService.login();
     if (isRedirecting) return;
 
-    setTimeout(() => {
-      setIsLoggingIn(false);
-      setState('REGISTER');
-    }, 1500);
+    // If cannot redirect (iframe/dev/in-app), try to init + read profile instead of forcing REGISTER.
+    setTimeout(async () => {
+      try {
+        const isLoggedIn = await lineService.init();
+        if (isLoggedIn) {
+          const lp = await lineService.getProfile();
+          if (lp?.userId) {
+            const cached = loadCachedUser(lp.userId);
+            if (cached) {
+              setCurrentUserProfile(cached);
+              setIsLoggingIn(false);
+              setState('PROFILE_SELECTION');
+              return;
+            }
+
+            const base: UserProfile = {
+              name: lp.displayName,
+              age: 0,
+              isSelf: true,
+              lineId: lp.userId,
+            };
+            setCurrentUserProfile(base);
+            setIsLoggingIn(false);
+            setState('COMPLETE_BASIC_INFO');
+            return;
+          }
+        }
+
+        setIsLoggingIn(false);
+        setState('REGISTER');
+      } catch {
+        setIsLoggingIn(false);
+        setState('REGISTER');
+      }
+    }, 600);
   };
 
+  /** ---------------------------
+   *  Manual Register
+   *  --------------------------- */
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-    const password = fd.get('password') as string;
+    const password = (fd.get('password') as string) || '';
 
     if (!password) {
       alert(language === 'th' ? 'กรุณากรอกรหัสผ่าน' : 'Please enter a password');
@@ -263,21 +339,43 @@ const App: React.FC = () => {
       return;
     }
 
+    // IMPORTANT:
+    // - If user came from LINE flow, currentUserProfile.lineId should exist.
+    // - Otherwise use manual_...
+    const lineIdFromLine = currentUserProfile?.lineId;
     const profile: UserProfile = {
       name: (fd.get('name') as string) || '',
       age: parseInt((fd.get('age') as string) || '0', 10),
       phoneNumber: (fd.get('phone') as string) || '',
-      lineId: `manual_${Date.now()}`,
+      lineId: lineIdFromLine || `manual_${Date.now()}`,
       isSelf: true,
     };
 
-    await registerUser(profile, password);
+    try {
+      await registerUser(profile, password);
+    } catch (err) {
+      console.error('registerUser failed:', err);
+      alert(language === 'th'
+        ? 'ลงทะเบียนไม่สำเร็จ กรุณาลองใหม่'
+        : 'Registration failed. Please try again.');
+      setLoading(false);
+      return;
+    }
 
     setCurrentUserProfile(profile);
+
+    // ✅ cache if it's a LINE user
+    if (profile.lineId && !profile.lineId.startsWith('manual_')) {
+      saveCachedUser(profile.lineId, profile);
+    }
+
     setLoading(false);
     setState('PROFILE_SELECTION');
   };
 
+  /** ---------------------------
+   *  Manual Login
+   *  --------------------------- */
   const handleManualLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -295,6 +393,7 @@ const App: React.FC = () => {
         age: result.age || 60,
         phoneNumber: phone,
         isSelf: true,
+        lineId: `manual_${phone}`,
       });
       setState('PROFILE_SELECTION');
     } else {
@@ -302,6 +401,9 @@ const App: React.FC = () => {
     }
   };
 
+  /** ---------------------------
+   *  Voice assistant tools
+   *  --------------------------- */
   const performVoiceLogin = () => {
     if (state === 'LOGIN') {
       handleLineLogin();
@@ -312,7 +414,6 @@ const App: React.FC = () => {
 
   const closeAssistant = () => {
     try {
-      // stop scheduled audio
       sourcesRef.current.forEach(s => {
         try { s.stop(); } catch { /* ignore */ }
       });
@@ -353,9 +454,7 @@ const App: React.FC = () => {
       const outputAudioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      if (outputAudioCtx.state === 'suspended') {
-        await outputAudioCtx.resume();
-      }
+      if (outputAudioCtx.state === 'suspended') await outputAudioCtx.resume();
 
       let pageContext = "";
       switch (state) {
@@ -384,7 +483,6 @@ const App: React.FC = () => {
         callbacks: {
           onopen: () => {
             const silence = new Uint8Array(1024);
-
             sessionPromise.then(s => {
               s.sendRealtimeInput({
                 media: { data: encode(silence), mimeType: 'audio/pcm;rate=16000' }
@@ -411,7 +509,6 @@ const App: React.FC = () => {
           },
 
           onmessage: async (message: LiveServerMessage) => {
-            // --- TS-safe tool calls ---
             const functionCalls = message.toolCall?.functionCalls ?? [];
             for (const fc of functionCalls) {
               if (fc.name === 'performLogin') {
@@ -426,7 +523,6 @@ const App: React.FC = () => {
               }
             }
 
-            // --- TS-safe audio parts ---
             const parts = message.serverContent?.modelTurn?.parts ?? [];
             const base64Audio = parts[0]?.inlineData?.data;
 
@@ -474,10 +570,14 @@ BEHAVIOR:
 
       sessionRef.current = await sessionPromise;
     } catch (err) {
+      console.error('Assistant error:', err);
       setIsAssistantActive(false);
     }
   };
 
+  /** ---------------------------
+   *  Basic Info
+   *  --------------------------- */
   const handleBasicInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentUserProfile) return;
@@ -491,9 +591,18 @@ BEHAVIOR:
     };
 
     setCurrentUserProfile(profile);
+
+    // ✅ cache if it's a LINE user
+    if (profile.lineId && !profile.lineId.startsWith('manual_')) {
+      saveCachedUser(profile.lineId, profile);
+    }
+
     setState('PROFILE_SELECTION');
   };
 
+  /** ---------------------------
+   *  Health Info (self)
+   *  --------------------------- */
   const handleHealthInfoSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -506,16 +615,26 @@ BEHAVIOR:
         ...currentUserProfile,
         weight: parseFloat((fd.get('weight') as string) || '0'),
         height: parseFloat((fd.get('height') as string) || '0'),
-        gender: (fd.get('gender') as Gender) || Gender.NOT_SPECIFIED,
+        gender: ((fd.get('gender') as Gender) || Gender.NOT_SPECIFIED),
         conditions: conditions.length > 0 ? conditions : [HealthCondition.NONE],
         isSelf: true,
       };
+
       setCurrentUserProfile(updatedProfile);
       setTargetProfile(updatedProfile);
+
+      // ✅ cache if it's a LINE user
+      if (updatedProfile.lineId && !updatedProfile.lineId.startsWith('manual_')) {
+        saveCachedUser(updatedProfile.lineId, updatedProfile);
+      }
+
       setState('ASSESSMENT');
     }
   };
 
+  /** ---------------------------
+   *  Create profile (others)
+   *  --------------------------- */
   const handleCreateProfileSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -528,7 +647,7 @@ BEHAVIOR:
       age: parseInt((fd.get('age') as string) || '0', 10),
       weight: parseFloat((fd.get('weight') as string) || '0'),
       height: parseFloat((fd.get('height') as string) || '0'),
-      gender: (fd.get('gender') as Gender) || Gender.NOT_SPECIFIED,
+      gender: ((fd.get('gender') as Gender) || Gender.NOT_SPECIFIED),
       conditions: conditions.length > 0 ? conditions : [HealthCondition.NONE],
       isSelf: false,
     };
@@ -537,31 +656,30 @@ BEHAVIOR:
     setState('ASSESSMENT');
   };
 
+  /** ---------------------------
+   *  Assessment Submit
+   *  --------------------------- */
   const handleAssessmentSubmit = async () => {
     if (!targetProfile) return;
-  
+
     setLoading(true);
-  
+
     try {
-      // normalize โดยไม่ mutate state
       const normalizedTarget: UserProfile = {
         ...targetProfile,
         conditions: targetProfile.conditions ?? [HealthCondition.NONE],
         gender: targetProfile.gender ?? Gender.NOT_SPECIFIED,
       };
-  
-      // 1) เรียก AI แนะนำอุปกรณ์
+
       const results = await getDeviceRecommendations(normalizedTarget, assessment, language);
       setRecommendations(Array.isArray(results) ? results : []);
-  
-      // 2) บันทึกลงชีต (ถ้าพัง ให้ข้ามได้)
+
       try {
         await saveToGoogleSheet(normalizedTarget, assessment);
       } catch (err) {
         console.error("saveToGoogleSheet failed:", err);
-        // ไม่ต้องค้างหน้า ให้ไปต่อได้
       }
-  
+
       setState('RESULTS');
     } catch (err) {
       console.error("handleAssessmentSubmit failed:", err);
@@ -864,7 +982,6 @@ BEHAVIOR:
             </div>
           </section>
 
-          {/* Sit-to-stand */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">2</span>
@@ -878,7 +995,6 @@ BEHAVIOR:
             </div>
           </section>
 
-          {/* Strength */}
           <section>
             <h3 className="text-gray-700 mb-1 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">3</span>
@@ -892,7 +1008,6 @@ BEHAVIOR:
             </div>
           </section>
 
-          {/* Weight bearing */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">4</span>
@@ -905,7 +1020,6 @@ BEHAVIOR:
             </div>
           </section>
 
-          {/* Budget */}
           <section>
             <h3 className="text-gray-700 mb-3 font-bold flex items-center gap-3 text-sm">
               <span className="w-6 h-6 bg-pink-400 text-white rounded-full flex items-center justify-center text-xs">5</span>
@@ -947,7 +1061,7 @@ BEHAVIOR:
                 <iframe
                   className="w-full aspect-video rounded-3xl mb-5 shadow-inner"
                   src={(MOCK_VIDEOS as any)[device.tutorialVideoId] || MOCK_VIDEOS.CANE}
-                  frameBorder="0"
+                  frameBorder={0}
                   allowFullScreen
                 />
 
@@ -957,7 +1071,7 @@ BEHAVIOR:
                       <span className="text-[10px] font-bold text-gray-400">{link.vendor}</span>
                       <div className="flex items-center gap-4">
                         <span className="font-black text-pink-600">฿{link.price.toLocaleString()}</span>
-                        <a href={link.url} target="_blank" className="bg-pink-400 text-white text-[10px] font-black px-4 py-2 rounded-xl">
+                        <a href={link.url} target="_blank" rel="noreferrer" className="bg-pink-400 text-white text-[10px] font-black px-4 py-2 rounded-xl">
                           {curT.buyBtn}
                         </a>
                       </div>
