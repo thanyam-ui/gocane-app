@@ -765,6 +765,17 @@ BEHAVIOR:
       </div>
     </>
   );
+  
+const displayName =
+  targetProfile?.name ||
+  currentUserProfile?.name ||
+  (language === 'th' ? 'ผู้ใช้' : 'User');
+
+const loginBadge = currentUserProfile?.lineId
+  ? `LINE: ${currentUserProfile.lineId.slice(0, 6)}…`
+  : currentUserProfile?.phoneNumber
+  ? `TEL: ${currentUserProfile.phoneNumber}`
+  : '';
 
   return (
     <Layout
@@ -786,6 +797,39 @@ BEHAVIOR:
       language={language}
       onLanguageChange={setLanguage}
     >
+{state !== 'LOGIN' && currentUserProfile && (
+  <div className="mb-4">
+    <div className="flex items-center justify-between gap-3 p-4 rounded-3xl bg-white border border-pink-100 shadow-sm">
+      <div className="min-w-0">
+        <div className="text-[11px] font-black text-pink-500 tracking-wide uppercase">
+          {language === 'th' ? 'เข้าสู่ระบบแล้ว' : 'Signed in'}
+        </div>
+        <div className="text-sm font-black text-gray-800 truncate">
+          {currentUserProfile.name || (language === 'th' ? 'ไม่ทราบชื่อ' : 'Unknown')}
+        </div>
+        {loginBadge && (
+          <div className="text-[10px] text-gray-400 font-semibold mt-1">{loginBadge}</div>
+        )}
+      </div>
+
+      <button
+        onClick={() => {
+          // Logout แบบง่าย: เคลียร์สถานะในแอป (ถ้ามี lineService.logout ค่อยเรียกเพิ่ม)
+          setCurrentUserProfile(null);
+          setTargetProfile(null);
+          setRecommendations([]);
+          setChatMessages([]);
+          setState('LOGIN');
+        }}
+        className="shrink-0 bg-pink-50 text-pink-600 border border-pink-100 font-black text-[11px] px-4 py-3 rounded-2xl active:scale-95 transition-all"
+      >
+        {language === 'th' ? 'ออกจากระบบ' : 'Logout'}
+      </button>
+    </div>
+  </div>
+)}
+
+  
       {state === 'LOGIN' && (
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
           <div className="w-28 h-28 bg-pink-400 rounded-[2.5rem] mb-8 flex items-center justify-center text-white text-5xl font-black shadow-lg ring-8 ring-pink-50">GO</div>
