@@ -1,104 +1,107 @@
 // src/services/geminiService.ts
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { UserProfile, AssessmentData, DeviceRecommendation, HealthCondition, Gender } from "../types";
 
-/**
- * NOTE:
- * - This file is written to be TS-safe (no possibly-undefined access).
- * - It uses Vite env: import.meta.env.VITE_API_KEY (client-side).
- * - For production security, move API calls to serverless (do later).
- */
-
 function getApiKey(): string {
-  const key = import.meta.env.VITE_API_KEY;
+  const key = (import.meta as any).env?.VITE_API_KEY as string | undefined;
   if (!key) throw new Error("Missing VITE_API_KEY");
   return key;
-}
-
-function normalizeProfile(profile: UserProfile): UserProfile {
-  return {
-    ...profile,
-    conditions: profile.conditions ?? [HealthCondition.NONE],
-    gender: profile.gender ?? Gender.NOT_SPECIFIED,
-  };
-}
-
-function safeJsonParse<T>(text: string): T | null {
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    return null;
-  }
 }
 
 export async function getDeviceRecommendations(
   profile: UserProfile,
   assessment: AssessmentData,
-  language: "th" | "en"
+  language: "th" | "en" = "th"
 ): Promise<DeviceRecommendation[]> {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  // ✅ normalize กัน undefined ตั้งแต่ต้น
+  const safeProfile: UserProfile = {
+    ...profile,
+    conditions: profile.conditions ?? [HealthCondition.NONE],
+    gender: profile.gender ?? Gender.NOT_SPECIFIED,
+    weight: profile.weight ?? 0,
+    height: profile.height ?? 0,
+  };
 
-  const p = normalizeProfile(profile);
-
-  const conditions = p.conditions ?? [HealthCondition.NONE];
-
-  // คุณสามารถปรับ prompt ให้ตรง requirement ได้
   const prompt = `
-You are a professional physical therapist.
-Return ONLY JSON array. No markdown.
+Analyze the following elderly user profile and mobility assessment to recommend suitable mobility aids.
+Language for Output: ${language.toUpperCase()}.
 
-Language: ${language}
-
-User profile:
-- name: ${p.name}
-- age: ${p.age}
-- gender: ${p.gender}
-- weight: ${p.weight ?? 0}
-- height: ${p.height ?? 0}
-- conditions: ${conditions.join(", ")}
-- isSelf: ${p.isSelf ? "true" : "false"}
+User Profile:
+- Age: ${safeProfile.age}
+- Weight: ${safeProfile.weight} kg
+- Height: ${safeProfile.height} cm
+- Gender: ${safeProfile.gender}
+- Conditions: ${(safeProfile.conditions ?? []).join(", ")}
 
 Assessment:
-- mobilityLevel: ${assessment.mobilityLevel}
-- sitToStand: ${assessment.sitToStand}
-- upperBodyStrength: ${assessment.upperBodyStrength}
-- weightBearing: ${assessment.weightBearing}
-- primaryEnvironment: ${assessment.primaryEnvironment}
-- budgetRange: ${assessment.budgetRange}
+- Mobility Level: ${assessment.mobilityLevel}
+- Sit-to-Stand Ability: ${assessment.sitToStand}
+- Upper Body Strength: ${assessment.upperBodyStrength}
+- Weight Bearing Status: ${assessment.weightBearing}
+- Environment: ${assessment.primaryEnvironment}
+- Budget: ${assessment.budgetRange}
 
-You must recommend 3-5 walking aid devices.
-Each item MUST match this schema:
-
-[
-  {
-    "id": "string",
-    "name": "string",
-    "reason": "string",
-    "qualityRating": number,
-    "approxPrice": number,
-    "tutorialVideoId": "CANE" | "QUAD_CANE" | "WALKER" | "ROLLATOR",
-    "purchaseLinks": [
-      { "vendor": "string", "price": number, "url": "string" }
-    ]
-  }
-]
+Return a JSON array of 3-4 devices.
+Each device fields:
+id, name, category, description, reason, tutorialVideoId, approxPrice, qualityRating, purchaseLinks[{vendor,url,price}]
 `;
 
-  // รุ่น SDK อาจต่างกันตามเวอร์ชัน; ใช้ generateContent แบบปลอดภัย
-  const result = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-  });
+  try {
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-  const text =
-    (result as any)?.text ??
-    (result as any)?.response?.text ??
-    (result as any)?.candidates?.[0]?.content?.parts?.map((x: any) => x?.text ?? "").join("") ??
-    "";
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              name: { type: Type.STRING },
+              category: { type: Type.STRING },
+              description: { type: Type.STRING },
+              reason: { type: Type.STRING },
+              tutorialVideoId: { type: Type.STRING },
+              approxPrice: { type: Type.NUMBER },
+              qualityRating: { type: Type.NUMBER },
+              purchaseLinks: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    vendor: { type: Type.STRING },
+                    url: { type: Type.STRING },
+                    price: { type: Type.NUMBER },
+                  },
+                  required: ["vendor", "url", "price"],
+                },
+              },
+            },
+            required: [
+              "id",
+              "name",
+              "category",
+              "description",
+              "reason",
+              "tutorialVideoId",
+              "approxPrice",
+              "qualityRating",
+              "purchaseLinks",
+            ],
+          },
+        },
+      },
+    });
 
-  const parsed = safeJsonParse<DeviceRecommendation[]>(text);
-  if (Array.isArray(parsed)) return parsed;
-
-  // fallback: ถ้าโมเดลตอบไม่เป็น JSON ให้ return ว่าง เพื่อไม่ให้ app พัง
-  return [];
+    const text = response.text?.trim();
+    if (!text) return [];
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? (parsed as DeviceRecommendation[]) : [];
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return [];
+  }
 }
